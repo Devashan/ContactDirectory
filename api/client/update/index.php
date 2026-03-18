@@ -50,6 +50,7 @@ $data = json_decode($json, true);
 
 $client_id_enc = $data['client_id'];
 $client_name = $data['client_name'];
+$contact_id_array = $data['contact_id'] ?? [];
 
 if (empty($client_name)) {
     echo json_encode(['error' => 'Client name is required', 'status' => 400]);
@@ -76,6 +77,43 @@ if ($client_id > 0) {
         exit;
     }
 
+    if (!empty($contact_id_array)) {   
+        foreach ($contact_id_array as $contact_id_enc) {
+            $contact_id = decrypt_data($contact_id_enc);
+
+            $columns = "client_id";
+            $values = "?";
+            $params = [$client_id];
+            $param_types = "i";
+
+            $columns .= ", contact_id";
+            $values .= ", ?";
+            $params[] = $contact_id;
+            $param_types .= "i";
+            
+            $columns .= ", created_at";
+            $values .= ", '$now'";
+            
+            $columns .= ", created_by";
+            $values .= ", 1"; // TODO: Get current user ID when implemented
+
+            $columns .= ", `status`";
+            $values .= ", 1";
+
+            $sql_insert = "INSERT INTO Client2Contact ($columns) VALUES ($values)";
+            $stmt = $database->prepare($sql_insert);
+            if ($stmt == false) {
+                echo json_encode(['error' => 'Failed to prepare statement', 'status' => 500]);
+                exit;
+            }
+            $stmt->bind_param($param_types, ...$params);
+            $stmt->execute();
+            if ($stmt->error) {
+                echo json_encode(['error' => 'Failed to execute statement', 'status' => 500]);
+                exit;
+            }
+        }
+    }
 } else {
     
     
