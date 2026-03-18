@@ -47,7 +47,11 @@ if (!$new_client) {
   $result = $database->query($sql_contacts_read);
   $contacts = $database->fetchAll($result);
   foreach ($contacts as $contact) {
-    $sql_contact_check = "SELECT * FROM Client2Contact WHERE client_id = $client_id  AND contact_id = $contact[contact_id]";
+    $check_condition = " WHERE client_id = $client_id";
+    $check_condition .= " AND contact_id = " . $contact['contact_id'];
+    $check_condition .= " AND status = 1";
+    
+    $sql_contact_check = "SELECT * FROM Client2Contact" . $check_condition;
     $result = $database->query($sql_contact_check);
     $has_contact = $database->has_results($result);
     if (!$has_contact) {

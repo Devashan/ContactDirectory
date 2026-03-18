@@ -21,7 +21,7 @@ function encrypt_data(string $plaintext, ?string $key = null): string
 
     $encrypted = openssl_encrypt($plaintext, $cipher, $key, OPENSSL_RAW_DATA, $iv);
 
-    return base64_encode($encrypted);
+    return rtrim(strtr(base64_encode($encrypted), '+/', '-_'), '=');
 }
 
 function decrypt_data(string $encrypted, ?string $key = null): string|false
@@ -37,7 +37,7 @@ function decrypt_data(string $encrypted, ?string $key = null): string|false
     }
     $cipher = "AES-256-CBC";
 
-    $data = base64_decode($encrypted);
+    $data = base64_decode(str_pad(strtr($encrypted, '-_', '+/'), strlen($encrypted) % 4, '=', STR_PAD_RIGHT));
 
     // use consistent IV from .env
     $iv = getenv('ENCRYPTION_IV');

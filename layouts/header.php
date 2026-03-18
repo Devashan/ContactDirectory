@@ -12,6 +12,7 @@ $navbar = '
                 <a class="navbar-brand" href="/">' . $system_title . '</a>
                 <div class="navbar-nav">
                     <a class="nav-link" href="/">Clients</a>
+                    <a class="nav-link" href="/contacts">Contacts</a>
                 </div>
             </div>
         </nav>
