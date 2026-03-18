@@ -2,43 +2,6 @@
 require_once($_SERVER['DOCUMENT_ROOT'] . '/config/utils.php');
 $database = DB::create_instance();
 
-function generateClientCode($name, $database)
-{
-    $words = preg_split('/\s+/', strtoupper($name));
-
-    if (count($words) > 1) {
-        $letters = '';
-        foreach ($words as $w) {
-            $letters .= $w[0];
-        }
-        $letters = substr($letters, 0, 3);
-    } else {
-        $letters = substr($words[0], 0, 3);
-    }
-
-    $letters = str_pad($letters, 3, 'A');
-
-    $num = 1;
-
-    while (true) {
-        $code = $letters . str_pad($num, 3, '0', STR_PAD_LEFT);
-
-        $sql_check = "SELECT COUNT(*) FROM Clients WHERE client_code = ?";
-        $stmt = $database->prepare($sql_check);
-        $stmt->bind_param("s", $code);
-        $stmt->execute();
-
-        $result = $stmt->get_result();
-        $count = $database->fetchOne($result)['COUNT(*)'];
-                
-        if ($count == 0) {
-            return $code;
-        }
-        
-        $num++;
-    }
-}
-
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['error' => 'Method not allowed']);
@@ -48,8 +11,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $json = file_get_contents('php://input');
 $data = json_decode($json, true);
 
-$client_id_enc = $data['client_id'];
-$client_name = $data['client_name'];
+$client_id_enc = $database->sanitize($data['client_id']); // Because it technically comes from the GET params in the frontend URL
+$client_name = $database->sanitize($data['client_name']);
 $contact_id_array = $data['contact_id'] ?? [];
 
 if (empty($client_name)) {

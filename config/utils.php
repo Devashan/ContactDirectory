@@ -19,10 +19,8 @@ function encrypt_data(string $plaintext, ?string $key = null): string
     // use consistent IV from .env
     $iv = getenv('ENCRYPTION_IV');
 
-    // encrypt
     $encrypted = openssl_encrypt($plaintext, $cipher, $key, OPENSSL_RAW_DATA, $iv);
 
-    // return base64 encoded encrypted data
     return base64_encode($encrypted);
 }
 
@@ -47,3 +45,40 @@ function decrypt_data(string $encrypted, ?string $key = null): string|false
     return openssl_decrypt($data, $cipher, $key, OPENSSL_RAW_DATA, $iv);
 }
 
+
+function generateClientCode($name, $database)
+{
+    $words = preg_split('/\s+/', strtoupper($name));
+
+    if (count($words) > 1) {
+        $letters = '';
+        foreach ($words as $w) {
+            $letters .= $w[0];
+        }
+        $letters = substr($letters, 0, 3);
+    } else {
+        $letters = substr($words[0], 0, 3);
+    }
+
+    $letters = str_pad($letters, 3, 'A');
+
+    $num = 1;
+
+    while (true) {
+        $code = $letters . str_pad($num, 3, '0', STR_PAD_LEFT);
+
+        $sql_check = "SELECT COUNT(*) FROM Clients WHERE client_code = ?";
+        $stmt = $database->prepare($sql_check);
+        $stmt->bind_param("s", $code);
+        $stmt->execute();
+
+        $result = $stmt->get_result();
+        $count = $database->fetchOne($result)['COUNT(*)'];
+                
+        if ($count == 0) {
+            return $code;
+        }
+        
+        $num++;
+    }
+}
