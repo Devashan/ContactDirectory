@@ -1,12 +1,17 @@
 <?php
+require_once($_SERVER['DOCUMENT_ROOT'] . '/config/utils.php');
 $init = require_once($_SERVER['DOCUMENT_ROOT'] . '/config/init.php');
 extract($init); // Creates $system_title, $top_scripts, $bottom_scripts & etc.
-$database = $init['db'];
+$database = DB::create_instance();
 
 
 // Populate clients table
 $tbl_content = "";
-$sql_client_read = "SELECT * FROM Clients";
+
+$condition = " WHERE client_id > 0";
+$order_by = " ORDER BY name ASC";
+$sql_client_read = "SELECT * FROM Clients" . $condition . $order_by;
+
 $result = $database->query($sql_client_read);
 if ($database->has_results($result)) {
     $tbl_content = '
@@ -22,10 +27,18 @@ if ($database->has_results($result)) {
     ';
     $users = $database->fetchAll($result);
     foreach ($users as $user) {
+        $condition = " WHERE client_id = " . $user['client_id'];
+        $condition .= " AND contact_id IS NOT NULL";
+        $condition .= " AND `status` = 1";
+        $order_by = "";
+        
+        $sql_client_read = "SELECT COUNT(*) as contact_count FROM Client2Contact" . $condition . $order_by;
+        $result = $database->query($sql_client_read);
+        $contact_count = $database->fetchOne($result)['contact_count'];
         $tbl_content .= "<tr>";
-        $tbl_content .= "   <td>" . $user['name'] . "</td>";
+        $tbl_content .= "   <td><a href='/clients/edit?id=" . encrypt_data($user['client_id']) . "'>" . $user['name'] . "</a></td>";
         $tbl_content .= "   <td>" . $user['client_code'] . "</td>";
-        $tbl_content .= "   <td class='text-center'>" . $user['contacts'] . "</td>";
+        $tbl_content .= "   <td class='text-center'>" . $contact_count . "</td>";
         $tbl_content .= "</tr>";
     }
     $tbl_content .= '
@@ -39,6 +52,8 @@ if ($database->has_results($result)) {
         </div>
     ';
 }
+
+$database->close();
 
 echo <<<HTML
 <!DOCTYPE html>
