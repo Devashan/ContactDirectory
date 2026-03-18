@@ -1,3 +1,5 @@
 .well-known
 .env
 error_log
+**error_log
+.ftpquota
