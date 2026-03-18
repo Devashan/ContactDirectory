@@ -38,7 +38,53 @@ if (!empty($client_id_enc)) {
   $new_client = true;
 }
 
+
 if (!$new_client) {
+
+  $contact_options = '<option selected disabled value="">Select a contact</option>';
+  $order_by = " ORDER BY surname ASC, name ASC";
+  $sql_contacts_read = "SELECT * FROM Contacts " . $order_by;
+  $result = $database->query($sql_contacts_read);
+  $contacts = $database->fetchAll($result);
+  foreach ($contacts as $contact) {
+    $sql_contact_check = "SELECT * FROM Client2Contact WHERE client_id = $client_id  AND contact_id = $contact[contact_id]";
+    $result = $database->query($sql_contact_check);
+    $has_contact = $database->has_results($result);
+    if (!$has_contact) {
+      $contact_full_name = $contact['name'] . ' ' . $contact['surname'];
+      $contact_options .= "<option value='" . encrypt_data($contact['contact_id']) . "'>" . $contact_full_name . "</option>";
+    }
+  }
+
+  $contact_tab_content = '
+  <!-- CONTACTS TAB -->
+  <div class="tab-pane fade" id="contacts">
+  <!-- Modal -->
+<div class="modal fade" id="contactSelectorModal" tabindex="-1" aria-labelledby="contactSelectorModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="contactSelectorModalLabel">Select Contact</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Select a contact to link to this client.</p>
+        <select class="form-select" aria-label="Select contact" id="contactSelector">
+        ' . $contact_options . '
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button class="btn btn-primary">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="d-flex justify-content-between mb-3">
+      <h5>Linked Contacts</h5>
+      <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#contactSelectorModal">Link Contact</button>
+    </div>
+    ';
 
   $condition = " WHERE client_id = " . $client_id;
   $condition .= " AND c2c.contact_id IS NOT NULL";
@@ -51,13 +97,7 @@ if (!$new_client) {
   $result = $database->query($sql_client_read);
   if ($database->has_results($result)) {
     $users = $database->fetchAll($result);
-    $contact_tab_content = '
-  <!-- CONTACTS TAB -->
-  <div class="tab-pane fade" id="contacts">
-    <div class="d-flex justify-content-between mb-3">
-      <h5>Linked Contacts</h5>
-      <button class="btn btn-sm btn-primary">Link Contact</button>
-    </div>
+    $contact_tab_content .= '
     <table class="table table-bordered">
       <thead class="table-light">
         <tr>
@@ -69,12 +109,14 @@ if (!$new_client) {
       <tbody>';
 
     foreach ($users as $user) {
+      $contact_full_name = $user['surname'] . ' ' . $user['name'];
+      $contact_id_enc = encrypt_data($user['contact_id']);
       $contact_tab_content .= '
         <tr>
-          <td>' . $user['surname'] . ' ' . $user['name'] . '</td>
+          <td>' . $contact_full_name . '</td>
           <td>' . $user['email'] . '</td>
           <td>
-            <a href="#" class="text-danger">Unlink</a>
+            <a href="/clients/unlink/?id=' . $client_id_enc . '&contact_id=' . $contact_id_enc . '" class="text-danger">Unlink</a>
           </td>
         </tr>';
     }
@@ -85,15 +127,12 @@ if (!$new_client) {
       </div>
     ';
   } else {
-    $contact_tab_content = ' <div class="tab-pane fade" id="contacts">
-    <div class="d-flex justify-content-between mb-3">
-      <h5>Linked Contacts</h5>
-      <button type="button" class="btn btn-sm btn-primary">Link Contact</button>
+      $contact_tab_content .= '
+      <div class="alert alert-secondary">
+        No contacts found for this client.
+      </div>
     </div>
-    <div class="alert alert-secondary">
-            No contacts found for this client.
-        </div>
-      </div>';
+    ';
   }
 
   $contact_tab = '
@@ -152,7 +191,7 @@ echo <<<HTML
         </div>
         <div class="mt-3">
           <button class="btn btn-success">Save</button>
-          <a href="/clients" class="btn btn-secondary">Cancel</a>
+          <a href="/" class="btn btn-secondary">Back to List</a>
         </div>
       </div>
       </form>
