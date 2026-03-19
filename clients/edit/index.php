@@ -73,7 +73,7 @@ if (!$new_client) {
       </div>
       <div class="modal-body">
         <p>Select a contact to link to this client.</p>
-        <select class="form-select" aria-label="Select contact" id="contactSelector">
+        <select class="form-select select2" aria-label="Select contact" id="contactSelector">
         ' . $contact_options . '
         </select>
       </div>
@@ -102,7 +102,7 @@ if (!$new_client) {
   if ($database->has_results($result)) {
     $users = $database->fetchAll($result);
     $contact_tab_content .= '
-    <table class="table table-bordered">
+    <table class="table table-bordered datatable">
       <thead class="table-light">
         <tr>
           <th>Contact Full Name</th>
@@ -118,7 +118,7 @@ if (!$new_client) {
       $contact_tab_content .= '
         <tr>
           <td>' . $contact_full_name . '</td>
-          <td>' . $user['email'] . '</td>
+          <td><a href="mailto:' . $user['email'] . '">' . $user['email'] . '</a></td>
           <td>
             <a href="/clients/unlink/?id=' . $client_id_enc . '&contact_id=' . $contact_id_enc . '" class="text-danger">Unlink</a>
           </td>
@@ -133,7 +133,7 @@ if (!$new_client) {
   } else {
       $contact_tab_content .= '
       <div class="alert alert-secondary">
-        No contacts found for this client.
+        No contacts found.
       </div>
     </div>
     ';
@@ -195,7 +195,7 @@ echo <<<HTML
         </div>
         <div class="mt-3">
           <button class="btn btn-success">Save</button>
-          <a href="/" class="btn btn-secondary">Back to List</a>
+          <a href="/clients" class="btn btn-secondary">Back to List</a>
         </div>
       </div>
       </form>

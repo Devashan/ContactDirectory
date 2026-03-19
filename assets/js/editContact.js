@@ -23,6 +23,27 @@ function saveContact(contactName, contactSurname, contactEmail, contactId, clien
     const feedbackContainer = document.getElementById('feedback-container');
     const feedbackMessage = document.getElementById('feedback-message');
     console.log("Saving contact:", contactName);
+
+    if (!contactName || contactName.trim() === '') {
+        feedbackContainer.classList.remove('d-none');
+        feedbackContainer.classList.add('alert-danger');
+        feedbackMessage.textContent = 'Contact name is required.';
+        return;
+    }
+
+    if (!contactSurname || contactSurname.trim() === '') {
+        feedbackContainer.classList.remove('d-none');
+        feedbackContainer.classList.add('alert-danger');
+        feedbackMessage.textContent = 'Contact surname is required.';
+        return;
+    }
+
+    if (!contactEmail || contactEmail.trim() === '') {
+        feedbackContainer.classList.remove('d-none');
+        feedbackContainer.classList.add('alert-danger');
+        feedbackMessage.textContent = 'Contact email is required.';
+        return;
+    }
     
     // Send to API
     fetch('/api/contact/update/', {
