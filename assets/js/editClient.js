@@ -21,6 +21,13 @@ function saveClient(clientName, clientId, contactIdArray) {
     const feedbackContainer = document.getElementById('feedback-container');
     const feedbackMessage = document.getElementById('feedback-message');
     console.log("Saving client:", clientName);
+
+    if (!clientName || clientName.trim() === '') {
+        feedbackContainer.classList.remove('d-none');
+        feedbackContainer.classList.add('alert-danger');
+        feedbackMessage.textContent = 'Client name is required.';
+        return;
+    }
     
     // Send to API
     fetch('/api/client/update/', {
@@ -46,7 +53,7 @@ function saveClient(clientName, clientId, contactIdArray) {
             feedbackMessage.textContent = 'Client saved successfully.';
             // Redirect to home page
             setTimeout(() => {
-                window.location.href = '/';
+                window.location.href = '/clients';
             }, 2000);
         } else {
             feedbackContainer.classList.remove('d-none');

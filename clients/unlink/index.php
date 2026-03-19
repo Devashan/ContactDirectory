@@ -39,6 +39,8 @@ if (!empty($client_id_enc) and !empty($contact_id_enc)) {
   ';
 }
 
+$database->close();
+
 echo <<<HTML
 <!DOCTYPE html>
 <html lang="en">

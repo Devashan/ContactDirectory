@@ -22,6 +22,17 @@ if (empty($contact_name)) {
     exit;
 }
 
+if (empty($contact_surname)) {
+    echo json_encode(['error' => 'Contact surname is required', 'status' => 400]);
+    exit;
+}
+
+if (empty($contact_email)) {
+    echo json_encode(['error' => 'Contact email is required', 'status' => 400]);
+    exit;
+}
+
+
 $contact_id = decrypt_data($contact_id_enc);
 if ($contact_id > 0) {
     // Update client
@@ -50,55 +61,97 @@ if ($contact_id > 0) {
         exit;
     }
 
-    if (!empty($client_id_array)) {   
+    if (!empty($client_id_array)) {
         foreach ($client_id_array as $client_id_enc) {
             $client_id = decrypt_data($client_id_enc);
 
-            $columns = "client_id";
-            $values = "?";
-            $params = [$client_id];
-            $param_types = "i";
+            $check_condition = "client_id = ? AND contact_id = ?";
+            $check_params = [$client_id, $contact_id];
+            $check_param_types = "ii";
 
-            $columns .= ", contact_id";
-            $values .= ", ?";
-            $params[] = $contact_id;
-            $param_types .= "i";
-            
-            $columns .= ", created_at";
-            $values .= ", '$now'";
-            
-            $columns .= ", created_by";
-            $values .= ", 1"; // TODO: Get current user ID when implemented
-
-            $columns .= ", `status`";
-            $values .= ", 1";
-
-            $sql_insert = "INSERT INTO Client2Contact ($columns) VALUES ($values)";
-            $stmt = $database->prepare($sql_insert);
-            if ($stmt == false) {
-                echo json_encode(['error' => 'Failed to prepare statement', 'status' => 500]);
+            $check_sql = "SELECT c_c_id FROM Client2Contact WHERE $check_condition";
+            $check_stmt = $database->prepare($check_sql);
+            if ($check_stmt == false) {
+                echo json_encode(['error' => 'Failed to prepare check statement', 'status' => 500]);
                 exit;
             }
-            $stmt->bind_param($param_types, ...$params);
-            $stmt->execute();
-            if ($stmt->error) {
-                echo json_encode(['error' => 'Failed to execute statement', 'status' => 500]);
-                exit;
+            $check_stmt->bind_param($check_param_types, ...$check_params);
+            $check_stmt->execute();
+            $check_result = $check_stmt->get_result();
+            if ($check_result->num_rows > 0) {
+                $check_row = $check_result->fetch_assoc();
+                $c_c_id = $check_row['c_c_id'];
+
+                $values = "status = 1";
+                $values .= ", updated_at = '$now'";
+
+                $sql_update = "UPDATE Client2Contact SET $values WHERE c_c_id = $c_c_id";
+                $database->query($sql_update);
+                if ($database->affected_rows() == 0) {
+                    echo json_encode(['error' => 'Failed to update contact', 'status' => 500]);
+                    exit;
+                }
+            } else {
+
+                $columns = "client_id";
+                $values = "?";
+                $params = [$client_id];
+                $param_types = "i";
+
+                $columns .= ", contact_id";
+                $values .= ", ?";
+                $params[] = $contact_id;
+                $param_types .= "i";
+
+                $columns .= ", created_at";
+                $values .= ", '$now'";
+
+                $columns .= ", created_by";
+                $values .= ", 1"; // TODO: Get current user ID when implemented
+
+                $columns .= ", `status`";
+                $values .= ", 1";
+
+                $sql_insert = "INSERT INTO Client2Contact ($columns) VALUES ($values)";
+                $stmt = $database->prepare($sql_insert);
+                if ($stmt == false) {
+                    echo json_encode(['error' => 'Failed to prepare statement', 'status' => 500]);
+                    exit;
+                }
+                $stmt->bind_param($param_types, ...$params);
+                $stmt->execute();
+                if ($stmt->error) {
+                    echo json_encode(['error' => 'Failed to execute statement', 'status' => 500]);
+                    exit;
+                }
             }
         }
     }
 } else {
 
+    $condition_email = " WHERE email = ? ";
+    $params_email = [$contact_email];
+    $param_types_email = "s";
+    $sql_check_email = "SELECT contact_id FROM Contacts $condition_email";
+    $stmt_check_email = $database->prepare($sql_check_email);
+    $stmt_check_email->bind_param($param_types_email, ...$params_email);
+    $stmt_check_email->execute();
+    $result_check_email = $stmt_check_email->get_result();
+    if ($database->has_results($result_check_email)) {
+        echo json_encode(['error' => 'Contact email already exists', 'status' => 400]);
+        exit;
+    }
+
     $columns = "name";
     $values = "?";
     $params = [$contact_name];
     $param_types = "s";
-    
+
     $columns .= ", surname";
     $values .= ", ?";
     $params[] = $contact_surname;
     $param_types .= "s";
-   
+
     $columns .= ", email";
     $values .= ", ?";
     $params[] = $contact_email;
@@ -126,7 +179,6 @@ if ($contact_id > 0) {
     $contact_id = $database->insert_id();
     $contact_id_enc = encrypt_data($contact_id);
 }
-
+$database->close();
 echo json_encode(['success' => true, 'status' => 200]);
 exit;
-

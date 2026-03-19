@@ -74,7 +74,7 @@ if (!$new_contact) {
       </div>
       <div class="modal-body">
         <p>Select a client to link to this contact.</p>
-        <select class="form-select" aria-label="Select client" id="clientSelector">
+        <select class="form-select select2" aria-label="Select client" id="clientSelector">
         ' . $client_options . '
         </select>
       </div>
@@ -103,7 +103,7 @@ if (!$new_contact) {
   if ($database->has_results($result)) {
     $clients = $database->fetchAll($result);
     $client_tab_content .= '
-    <table class="table table-bordered">
+    <table class="table table-bordered datatable">
       <thead class="table-light">
         <tr>
           <th>Client Name</th>
@@ -133,7 +133,7 @@ if (!$new_contact) {
   } else {
       $client_tab_content .= '
       <div class="alert alert-secondary">
-        No clients found for this contact.
+        No client found
       </div>
     </div>
     ';
