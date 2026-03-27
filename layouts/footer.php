@@ -15,8 +15,12 @@ $bottom_scripts = '
             }
             
             if ($(".datatable").length > 0) {
-                // $(".datatable").DataTable();
-                new DataTable(".datatable");
+                $(".datatable").each(function(index, tableElement) {
+                    new DataTable(tableElement, {
+                        stateSave: true,
+                        stateDuration: -1
+                    });
+                });
             }
         });
     </script>
@@ -25,6 +29,3 @@ $bottom_scripts = '
 return [
     'bottom_scripts' => $bottom_scripts
 ];
-
-
-  
